@@ -59,9 +59,13 @@ x[b,s,m] ∈ {0,1}  : 1 if book b is assigned to supplier s using method m
       Σ_m x[b1,s,m] = Σ_m x[b2,s,m]
    ```
 
-3. **Brand Diversification**: Max 4 volumes per brand per supplier (regardless of method)
+3. **Brand Diversification**: Max 4 kits (or standalone books) per brand per supplier
    ```
-   ∀ brand br, ∀ supplier s: Σ_{b ∈ br} Σ_m x[b,s,m] ≤ 4
+   ∀ brand br, ∀ supplier s:
+      (# distinct kits of brand br assigned to s) +
+      (# standalone books of brand br assigned to s) ≤ 4
+
+   Note: A kit with 3 books counts as 1, not 3
    ```
 
 4. **Supplier Capacity by Printing Method**: Separate capacity constraints per method

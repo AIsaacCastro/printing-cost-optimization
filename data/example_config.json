@@ -1,5 +1,6 @@
 {
   "max_volumes_per_brand_per_supplier": 4,
+  "_comment": "max_volumes_per_brand_per_supplier limits the number of kits (or standalone books) per brand per supplier. A kit with multiple books counts as 1.",
   "solver_time_limit_seconds": 300,
   "num_search_workers": 8,
   "enable_symmetry_breaking": true

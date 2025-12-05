@@ -87,7 +87,8 @@ class OptimizationConfig(BaseModel):
     max_volumes_per_brand_per_supplier: int = Field(
         4,
         gt=0,
-        description="Maximum volumes of the same brand per supplier"
+        description="Maximum kits (or standalone books) of the same brand per supplier. "
+                    "A kit with multiple books counts as 1, not as the number of books in it."
     )
     solver_time_limit_seconds: int = Field(
         300,

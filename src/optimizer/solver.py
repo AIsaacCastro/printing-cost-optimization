@@ -133,40 +133,70 @@ class SupplierAllocationSolver:
                         )
 
     def _add_brand_diversification_constraints(self) -> None:
-        """Maximum volumes per brand per supplier constraint (regardless of method)"""
-        max_volumes = self.data.config.max_volumes_per_brand_per_supplier
+        """
+        Maximum kits per brand per supplier constraint
+
+        Counts distinct kits (not individual books). A kit with 3 books counts as 1.
+        Standalone books (not in kits) each count as 1.
+        """
+        max_kits = self.data.config.max_volumes_per_brand_per_supplier
 
         for brand, book_ids in self.books_by_brand.items():
             for supplier in self.data.suppliers:
-                # Count how many books of this brand are assigned to this supplier (any method)
-                brand_books_to_supplier = []
+                # Find all kits that contain at least one book from this brand
+                kits_with_brand = set()
+                standalone_books = []
 
                 for book_id in book_ids:
                     book = self.book_map[book_id]
-                    # For each book, create a binary indicator: is it assigned to this supplier?
-                    book_to_supplier_indicator = self.model.NewBoolVar(
+                    if book.kit_id:
+                        kits_with_brand.add(book.kit_id)
+                    else:
+                        standalone_books.append(book_id)
+
+                items_to_count = []  # Both kits and standalone books
+
+                # Create indicators for each kit (counts as 1 regardless of number of books)
+                for kit_id in kits_with_brand:
+                    kit_to_supplier = self.model.NewBoolVar(
+                        f"brand_{brand}_kit_{kit_id}_supplier_{supplier.id}"
+                    )
+
+                    # Kit is assigned to supplier if ANY book in the kit is assigned to supplier
+                    # (all books in kit go to same supplier due to kit cohesion constraint)
+                    kit = self.kit_map[kit_id]
+                    # Pick the first book in the kit as representative
+                    first_book_id = kit.book_ids[0]
+                    first_book_methods = [
+                        self.x[first_book_id, supplier.id, method]
+                        for method in self.book_map[first_book_id].available_printing_methods
+                        if (first_book_id, supplier.id, method) in self.x
+                    ]
+
+                    if first_book_methods:
+                        self.model.Add(sum(first_book_methods) == kit_to_supplier)
+                        items_to_count.append(kit_to_supplier)
+
+                # Create indicators for standalone books (each counts as 1 "kit")
+                for book_id in standalone_books:
+                    book = self.book_map[book_id]
+                    book_to_supplier = self.model.NewBoolVar(
                         f"brand_{brand}_book_{book_id}_supplier_{supplier.id}"
                     )
 
-                    # Get all methods for this book-supplier combination
-                    methods_for_book_supplier = [
+                    methods_for_book = [
                         self.x[book_id, supplier.id, method]
                         for method in book.available_printing_methods
                         if (book_id, supplier.id, method) in self.x
                     ]
 
-                    if methods_for_book_supplier:
-                        # Indicator is 1 if book is assigned to supplier with any method
-                        self.model.Add(
-                            sum(methods_for_book_supplier) == book_to_supplier_indicator
-                        )
-                        brand_books_to_supplier.append(book_to_supplier_indicator)
-                    else:
-                        # No valid assignments, indicator must be 0
-                        self.model.Add(book_to_supplier_indicator == 0)
+                    if methods_for_book:
+                        self.model.Add(sum(methods_for_book) == book_to_supplier)
+                        items_to_count.append(book_to_supplier)
 
-                if brand_books_to_supplier:
-                    self.model.Add(sum(brand_books_to_supplier) <= max_volumes)
+                # Total kits + standalone books <= max_kits
+                if items_to_count:
+                    self.model.Add(sum(items_to_count) <= max_kits)
 
     def _add_capacity_constraints(self) -> None:
         """Supplier capacity constraints by printing method"""

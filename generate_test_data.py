@@ -16,12 +16,12 @@ from pathlib import Path
 from typing import List, Dict
 
 # Configuration
-NUM_BOOKS = 5000
+NUM_BOOKS = 1500
 NUM_SUPPLIERS = 20
-NUM_BRANDS = 50
-NUM_KITS = 200
+NUM_BRANDS = 15
+NUM_KITS = 225
 BOOKS_PER_KIT_MIN = 2
-BOOKS_PER_KIT_MAX = 5
+BOOKS_PER_KIT_MAX = 15
 PRINTING_METHODS = ["offset", "digital", "hybrid"]
 
 # Random seed for reproducibility

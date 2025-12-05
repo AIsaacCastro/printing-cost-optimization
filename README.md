@@ -11,7 +11,7 @@ This system solves a **constrained generalized assignment problem** for printing
 
 Subject to these constraints:
 - **Kit Cohesion**: Books in the same kit must be printed by the same supplier (but can use different methods)
-- **Brand Diversification**: Maximum 4 volumes per brand per supplier
+- **Brand Diversification**: Maximum 4 kits (or standalone books) per brand per supplier. A kit with 3 books counts as 1, not 3.
 - **Capacity Constraints**: Supplier capacity varies by printing method
 - **Cost Minimization**: Find the optimal (supplier, method) allocation that minimizes total printing costs
 
@@ -170,6 +170,15 @@ This generates three CSV files in the `results/` directory:
 - `supplier_summary.csv` - Supplier utilization and cost summary
 - `brand_distribution.csv` - Brand distribution across suppliers
 
+**Verify brand constraint:**
+
+After solving, verify that the brand diversification constraint is satisfied:
+```bash
+python verify_brand_constraint.py
+```
+
+This validates that no brand has more than the configured maximum items (kits or standalone books) per supplier. Remember: a kit with N books counts as 1 item, not N items.
+
 ## Data Format
 
 ### Books (JSON)
@@ -259,7 +268,7 @@ See [CLAUDE.md](CLAUDE.md) for detailed architectural guidance.
 
 1. **Volume Uniformity**: Each book assigned to exactly one (supplier, method) combination
 2. **Kit Cohesion**: All books in a kit go to the same supplier (can use different methods)
-3. **Brand Diversification**: Max 4 volumes per brand per supplier (regardless of method)
+3. **Brand Diversification**: Max 4 kits (or standalone books) per brand per supplier. A kit with 3 books counts as 1 unit, not 3.
 4. **Capacity by Method**: Supplier capacity respected per printing method
 5. **Symmetry Breaking**: Optimization for suppliers with identical characteristics
 
