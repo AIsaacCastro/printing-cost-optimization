@@ -1,0 +1,6 @@
+{
+  "max_volumes_per_brand_per_supplier": 4,
+  "solver_time_limit_seconds": 300,
+  "num_search_workers": 8,
+  "enable_symmetry_breaking": true
+}

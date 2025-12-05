@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -m src.optimizer.cli:*)",
+      "Bash(python export_results.py:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

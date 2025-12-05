@@ -1,0 +1,17 @@
+[
+  {
+    "id": "K001",
+    "name": "Python Programming Complete Series",
+    "book_ids": ["B001", "B002", "B003"]
+  },
+  {
+    "id": "K002",
+    "name": "Python Web Development Bundle",
+    "book_ids": ["B004", "B005"]
+  },
+  {
+    "id": "K003",
+    "name": "Cloud Computing Professional Pack",
+    "book_ids": ["B009", "B010", "B011"]
+  }
+]

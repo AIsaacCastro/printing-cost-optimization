@@ -1,0 +1,34 @@
+[
+  {
+    "id": "S001",
+    "name": "PrintMaster Pro",
+    "capacities": {
+      "offset": 25000,
+      "digital": 10000
+    }
+  },
+  {
+    "id": "S002",
+    "name": "QuickPrint Solutions",
+    "capacities": {
+      "offset": 20000,
+      "digital": 15000
+    }
+  },
+  {
+    "id": "S003",
+    "name": "GlobalPrint Inc",
+    "capacities": {
+      "offset": 30000,
+      "digital": 8000
+    }
+  },
+  {
+    "id": "S004",
+    "name": "EcoPrint Services",
+    "capacities": {
+      "offset": 15000,
+      "digital": 12000
+    }
+  }
+]

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "B001",
+    "title": "Introduction to Python Programming",
+    "brand": "TechBooks",
+    "production_volume": 5000,
+    "printing_method": "offset",
+    "kit_id": "K001"
+  },
+  {
+    "id": "B002",
+    "title": "Advanced Python Techniques",
+    "brand": "TechBooks",
+    "production_volume": 3000,
+    "printing_method": "offset",
+    "kit_id": "K001"
+  },
+  {
+    "id": "B003",
+    "title": "Python for Data Science",
+    "brand": "TechBooks",
+    "production_volume": 4000,
+    "printing_method": "offset",
+    "kit_id": "K001"
+  },
+  {
+    "id": "B004",
+    "title": "Web Development with Django",
+    "brand": "WebDev",
+    "production_volume": 2500,
+    "printing_method": "digital",
+    "kit_id": "K002"
+  },
+  {
+    "id": "B005",
+    "title": "Flask Microservices",
+    "brand": "WebDev",
+    "production_volume": 2000,
+    "printing_method": "digital",
+    "kit_id": "K002"
+  },
+  {
+    "id": "B006",
+    "title": "Machine Learning Basics",
+    "brand": "DataScience",
+    "production_volume": 6000,
+    "printing_method": "offset",
+    "kit_id": null
+  },
+  {
+    "id": "B007",
+    "title": "Deep Learning Fundamentals",
+    "brand": "DataScience",
+    "production_volume": 5500,
+    "printing_method": "offset",
+    "kit_id": null
+  },
+  {
+    "id": "B008",
+    "title": "Neural Networks Explained",
+    "brand": "DataScience",
+    "production_volume": 4500,
+    "printing_method": "offset",
+    "kit_id": null
+  },
+  {
+    "id": "B009",
+    "title": "Cloud Computing Essentials",
+    "brand": "CloudTech",
+    "production_volume": 3500,
+    "printing_method": "digital",
+    "kit_id": "K003"
+  },
+  {
+    "id": "B010",
+    "title": "AWS Architecture Guide",
+    "brand": "CloudTech",
+    "production_volume": 3000,
+    "printing_method": "digital",
+    "kit_id": "K003"
+  },
+  {
+    "id": "B011",
+    "title": "Docker and Kubernetes",
+    "brand": "CloudTech",
+    "production_volume": 2800,
+    "printing_method": "digital",
+    "kit_id": "K003"
+  },
+  {
+    "id": "B012",
+    "title": "JavaScript Modern Development",
+    "brand": "WebDev",
+    "production_volume": 4200,
+    "printing_method": "offset",
+    "kit_id": null
+  },
+  {
+    "id": "B013",
+    "title": "React and Redux",
+    "brand": "WebDev",
+    "production_volume": 3800,
+    "printing_method": "offset",
+    "kit_id": null
+  },
+  {
+    "id": "B014",
+    "title": "Database Design Principles",
+    "brand": "DataEngineering",
+    "production_volume": 2200,
+    "printing_method": "digital",
+    "kit_id": null
+  },
+  {
+    "id": "B015",
+    "title": "SQL Query Optimization",
+    "brand": "DataEngineering",
+    "production_volume": 2000,
+    "printing_method": "digital",
+    "kit_id": null
+  }
+]

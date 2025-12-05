@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Results
+results/*.json
+results/*.csv
+!results/.gitkeep
+
+# Data (keep examples)
+data/*
+!data/example_*.json
+!data/example_*.csv
+!data/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
