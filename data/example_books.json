@@ -4,7 +4,7 @@
     "title": "Introduction to Python Programming",
     "brand": "TechBooks",
     "production_volume": 5000,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset", "digital"],
     "kit_id": "K001"
   },
   {
@@ -12,7 +12,7 @@
     "title": "Advanced Python Techniques",
     "brand": "TechBooks",
     "production_volume": 3000,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset", "digital"],
     "kit_id": "K001"
   },
   {
@@ -20,7 +20,7 @@
     "title": "Python for Data Science",
     "brand": "TechBooks",
     "production_volume": 4000,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset", "digital"],
     "kit_id": "K001"
   },
   {
@@ -28,7 +28,7 @@
     "title": "Web Development with Django",
     "brand": "WebDev",
     "production_volume": 2500,
-    "printing_method": "digital",
+    "available_printing_methods": ["digital"],
     "kit_id": "K002"
   },
   {
@@ -36,7 +36,7 @@
     "title": "Flask Microservices",
     "brand": "WebDev",
     "production_volume": 2000,
-    "printing_method": "digital",
+    "available_printing_methods": ["digital"],
     "kit_id": "K002"
   },
   {
@@ -44,7 +44,7 @@
     "title": "Machine Learning Basics",
     "brand": "DataScience",
     "production_volume": 6000,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset", "digital"],
     "kit_id": null
   },
   {
@@ -52,7 +52,7 @@
     "title": "Deep Learning Fundamentals",
     "brand": "DataScience",
     "production_volume": 5500,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset"],
     "kit_id": null
   },
   {
@@ -60,7 +60,7 @@
     "title": "Neural Networks Explained",
     "brand": "DataScience",
     "production_volume": 4500,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset", "digital"],
     "kit_id": null
   },
   {
@@ -68,7 +68,7 @@
     "title": "Cloud Computing Essentials",
     "brand": "CloudTech",
     "production_volume": 3500,
-    "printing_method": "digital",
+    "available_printing_methods": ["digital", "offset"],
     "kit_id": "K003"
   },
   {
@@ -76,7 +76,7 @@
     "title": "AWS Architecture Guide",
     "brand": "CloudTech",
     "production_volume": 3000,
-    "printing_method": "digital",
+    "available_printing_methods": ["digital", "offset"],
     "kit_id": "K003"
   },
   {
@@ -84,7 +84,7 @@
     "title": "Docker and Kubernetes",
     "brand": "CloudTech",
     "production_volume": 2800,
-    "printing_method": "digital",
+    "available_printing_methods": ["digital"],
     "kit_id": "K003"
   },
   {
@@ -92,7 +92,7 @@
     "title": "JavaScript Modern Development",
     "brand": "WebDev",
     "production_volume": 4200,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset", "digital"],
     "kit_id": null
   },
   {
@@ -100,7 +100,7 @@
     "title": "React and Redux",
     "brand": "WebDev",
     "production_volume": 3800,
-    "printing_method": "offset",
+    "available_printing_methods": ["offset", "digital"],
     "kit_id": null
   },
   {
@@ -108,7 +108,7 @@
     "title": "Database Design Principles",
     "brand": "DataEngineering",
     "production_volume": 2200,
-    "printing_method": "digital",
+    "available_printing_methods": ["digital"],
     "kit_id": null
   },
   {
@@ -116,7 +116,7 @@
     "title": "SQL Query Optimization",
     "brand": "DataEngineering",
     "production_volume": 2000,
-    "printing_method": "digital",
+    "available_printing_methods": ["digital", "offset"],
     "kit_id": null
   }
 ]

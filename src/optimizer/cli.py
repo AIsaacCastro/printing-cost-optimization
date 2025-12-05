@@ -152,6 +152,7 @@ def _display_results(result: OptimizationResult, data, verbose: bool):
                 # Show individual book assignments
                 table = Table(show_header=True, header_style="bold magenta")
                 table.add_column("Book ID", style="cyan")
+                table.add_column("Method", style="yellow")
                 table.add_column("Volume", justify="right")
                 table.add_column("Unit Cost", justify="right")
                 table.add_column("Total Cost", justify="right")
@@ -159,6 +160,7 @@ def _display_results(result: OptimizationResult, data, verbose: bool):
                 for assignment in sorted(assignments, key=lambda a: a.book_id):
                     table.add_row(
                         assignment.book_id,
+                        assignment.printing_method,
                         f"{assignment.production_volume:,}",
                         f"${assignment.unit_cost:.2f}",
                         f"${assignment.total_cost:,.2f}"
@@ -193,6 +195,7 @@ def _save_results(result: OptimizationResult, output_file: Path, solver: Supplie
             {
                 "book_id": a.book_id,
                 "supplier_id": a.supplier_id,
+                "printing_method": a.printing_method,
                 "production_volume": a.production_volume,
                 "unit_cost": a.unit_cost,
                 "total_cost": a.total_cost
@@ -242,14 +245,15 @@ def validate(
         for brand, count in sorted(brands.items()):
             console.print(f"  • {brand}: {count}")
 
-        # Printing methods
-        methods = {}
+        # Available printing methods
+        all_methods = set()
         for book in data.books:
-            methods[book.printing_method] = methods.get(book.printing_method, 0) + 1
+            all_methods.update(book.available_printing_methods)
 
-        console.print(f"\n[bold]Books by Printing Method:[/bold]")
-        for method, count in sorted(methods.items()):
-            console.print(f"  • {method}: {count}")
+        console.print(f"\n[bold]Available Printing Methods:[/bold]")
+        for method in sorted(all_methods):
+            count = sum(1 for book in data.books if method in book.available_printing_methods)
+            console.print(f"  • {method}: {count} books can use this method")
 
     except Exception as e:
         console.print(f"\n[bold red]Validation Error:[/bold red] {str(e)}")

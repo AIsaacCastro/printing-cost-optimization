@@ -41,6 +41,7 @@ class DataLoader:
             Cost(
                 book_id=row['book_id'],
                 supplier_id=row['supplier_id'],
+                printing_method=row['printing_method'],
                 unit_cost=row['unit_cost']
             )
             for _, row in df.iterrows()
@@ -111,6 +112,7 @@ class DataLoader:
         """
         book_ids = {book.id for book in data.books}
         supplier_ids = {supplier.id for supplier in data.suppliers}
+        book_map = {book.id: book for book in data.books}
 
         # Validate kit book references
         for kit in data.kits:
@@ -132,6 +134,16 @@ class DataLoader:
                 raise ValueError(
                     f"Cost entry references non-existent supplier {cost.supplier_id}"
                 )
+
+            # Validate that the printing method is available for the book
+            book = book_map[cost.book_id]
+            if cost.printing_method not in book.available_printing_methods:
+                raise ValueError(
+                    f"Cost entry for book {cost.book_id} references printing method "
+                    f"'{cost.printing_method}' which is not in the book's available methods: "
+                    f"{book.available_printing_methods}"
+                )
+
             cost_book_ids.add(cost.book_id)
             cost_supplier_ids.add(cost.supplier_id)
 
@@ -167,14 +179,16 @@ class DataLoader:
                         f"claims {book.kit_id} but is in {kit_book_assignments[book.id]}"
                     )
 
-        # Validate supplier capacities cover all required printing methods
-        printing_methods = {book.printing_method for book in data.books}
-        for supplier in data.suppliers:
-            supplier_methods = set(supplier.capacities.keys())
-            missing_methods = printing_methods - supplier_methods
-            if missing_methods:
-                # This is just a warning case - supplier might not support all methods
-                pass
+        # Validate that each book has at least one valid (supplier, method) combination
+        for book in data.books:
+            valid_combinations = [
+                cost for cost in data.costs
+                if cost.book_id == book.id
+            ]
+            if not valid_combinations:
+                raise ValueError(
+                    f"Book {book.id} has no valid cost entries for any supplier/method combination"
+                )
 
     @staticmethod
     def get_books_by_kit(data: ProblemData) -> Dict[str, List[Book]]:
@@ -188,15 +202,15 @@ class DataLoader:
         return books_by_kit
 
     @staticmethod
-    def get_cost_matrix(data: ProblemData) -> Dict[tuple[str, str], float]:
+    def get_cost_matrix(data: ProblemData) -> Dict[tuple[str, str, str], float]:
         """
         Create a cost lookup dictionary
 
         Returns:
-            Dict mapping (book_id, supplier_id) -> unit_cost
+            Dict mapping (book_id, supplier_id, printing_method) -> unit_cost
         """
         return {
-            (cost.book_id, cost.supplier_id): cost.unit_cost
+            (cost.book_id, cost.supplier_id, cost.printing_method): cost.unit_cost
             for cost in data.costs
         }
 

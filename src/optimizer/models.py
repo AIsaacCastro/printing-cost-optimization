@@ -11,14 +11,21 @@ class Book(BaseModel):
     title: str = Field(..., description="Book title")
     brand: str = Field(..., description="Brand/series the book belongs to")
     production_volume: int = Field(..., gt=0, description="Number of copies to print")
-    printing_method: str = Field(..., description="Required printing method (e.g., offset, digital)")
+    available_printing_methods: List[str] = Field(
+        ...,
+        min_length=1,
+        description="List of printing methods that can be used for this book (e.g., ['offset', 'digital'])"
+    )
     kit_id: Optional[str] = Field(None, description="Kit this book belongs to (if any)")
 
-    @field_validator('printing_method')
+    @field_validator('available_printing_methods')
     @classmethod
-    def validate_printing_method(cls, v: str) -> str:
-        """Validate and normalize printing method"""
-        return v.lower().strip()
+    def validate_printing_methods(cls, v: List[str]) -> List[str]:
+        """Validate and normalize printing methods"""
+        normalized = [method.lower().strip() for method in v]
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Duplicate printing methods found")
+        return normalized
 
 
 class Kit(BaseModel):
@@ -60,11 +67,18 @@ class Supplier(BaseModel):
 
 
 class Cost(BaseModel):
-    """Represents the cost of printing a book at a supplier"""
+    """Represents the cost of printing a book at a supplier using a specific method"""
 
     book_id: str = Field(..., description="Book identifier")
     supplier_id: str = Field(..., description="Supplier identifier")
+    printing_method: str = Field(..., description="Printing method (e.g., offset, digital)")
     unit_cost: float = Field(..., gt=0, description="Cost per unit")
+
+    @field_validator('printing_method')
+    @classmethod
+    def validate_printing_method(cls, v: str) -> str:
+        """Validate and normalize printing method"""
+        return v.lower().strip()
 
 
 class OptimizationConfig(BaseModel):
@@ -129,10 +143,11 @@ class ProblemData(BaseModel):
 
 
 class Assignment(BaseModel):
-    """Represents an assignment of a book to a supplier"""
+    """Represents an assignment of a book to a supplier using a specific printing method"""
 
     book_id: str
     supplier_id: str
+    printing_method: str
     production_volume: int
     unit_cost: float
     total_cost: float

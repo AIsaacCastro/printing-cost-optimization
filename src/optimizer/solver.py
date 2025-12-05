@@ -1,4 +1,4 @@
-"""CP-SAT solver for the supplier allocation problem"""
+"""CP-SAT solver for the supplier allocation problem with printing method optimization"""
 
 import time
 from collections import defaultdict
@@ -10,7 +10,7 @@ from .models import Book, ProblemData, OptimizationResult, Assignment
 
 
 class SupplierAllocationSolver:
-    """Solves the constrained supplier allocation problem using CP-SAT"""
+    """Solves the constrained supplier allocation problem using CP-SAT with method optimization"""
 
     def __init__(self, data: ProblemData):
         """
@@ -22,12 +22,12 @@ class SupplierAllocationSolver:
         self.data = data
         self.model = cp_model.CpModel()
 
-        # Decision variables: x[book_id, supplier_id] = 1 if book assigned to supplier
-        self.x: Dict[Tuple[str, str], cp_model.IntVar] = {}
+        # Decision variables: x[book_id, supplier_id, method] = 1 if book assigned to supplier using method
+        self.x: Dict[Tuple[str, str, str], cp_model.IntVar] = {}
 
-        # Cost matrix: (book_id, supplier_id) -> unit_cost
-        self.cost_matrix: Dict[Tuple[str, str], float] = {
-            (cost.book_id, cost.supplier_id): cost.unit_cost
+        # Cost matrix: (book_id, supplier_id, method) -> unit_cost
+        self.cost_matrix: Dict[Tuple[str, str, str], float] = {
+            (cost.book_id, cost.supplier_id, cost.printing_method): cost.unit_cost
             for cost in data.costs
         }
 
@@ -59,32 +59,36 @@ class SupplierAllocationSolver:
             self._add_symmetry_breaking_constraints()
 
     def _create_variables(self) -> None:
-        """Create decision variables for book-to-supplier assignments"""
+        """Create decision variables for book-to-supplier-method assignments"""
         for book in self.data.books:
             for supplier in self.data.suppliers:
-                # Only create variable if there's a cost defined
-                if (book.id, supplier.id) in self.cost_matrix:
-                    var_name = f"x_{book.id}_{supplier.id}"
-                    self.x[book.id, supplier.id] = self.model.NewBoolVar(var_name)
+                for method in book.available_printing_methods:
+                    # Only create variable if there's a cost defined for this combination
+                    if (book.id, supplier.id, method) in self.cost_matrix:
+                        var_name = f"x_{book.id}_{supplier.id}_{method}"
+                        self.x[book.id, supplier.id, method] = self.model.NewBoolVar(var_name)
 
     def _add_assignment_constraints(self) -> None:
-        """Each book must be assigned to exactly one supplier"""
+        """Each book must be assigned to exactly one (supplier, method) combination"""
         for book in self.data.books:
-            # Get all suppliers this book can be assigned to
-            suppliers_for_book = [
-                self.x[book.id, supplier.id]
+            # Get all valid (supplier, method) combinations for this book
+            valid_assignments = [
+                self.x[book.id, supplier.id, method]
                 for supplier in self.data.suppliers
-                if (book.id, supplier.id) in self.x
+                for method in book.available_printing_methods
+                if (book.id, supplier.id, method) in self.x
             ]
 
-            if not suppliers_for_book:
-                raise ValueError(f"Book {book.id} has no valid supplier assignments")
+            if not valid_assignments:
+                raise ValueError(
+                    f"Book {book.id} has no valid (supplier, method) assignments"
+                )
 
-            # Exactly one supplier per book
-            self.model.Add(sum(suppliers_for_book) == 1)
+            # Exactly one (supplier, method) pair per book
+            self.model.Add(sum(valid_assignments) == 1)
 
     def _add_kit_cohesion_constraints(self) -> None:
-        """All books in a kit must be assigned to the same supplier"""
+        """All books in a kit must be assigned to the same supplier (but can use different methods)"""
         for kit in self.data.kits:
             if len(kit.book_ids) < 2:
                 continue  # Single-book kits don't need cohesion constraints
@@ -92,28 +96,74 @@ class SupplierAllocationSolver:
             # Reference book (first book in kit)
             ref_book_id = kit.book_ids[0]
 
-            # All other books must match the reference book's assignment
+            # For each supplier, create a variable indicating if the kit is assigned to that supplier
+            kit_supplier_vars = {}
+            for supplier in self.data.suppliers:
+                kit_supplier_vars[supplier.id] = self.model.NewBoolVar(
+                    f"kit_{kit.id}_supplier_{supplier.id}"
+                )
+
+                # Kit is assigned to supplier if ref_book is assigned to supplier (any method)
+                ref_book_to_supplier = [
+                    self.x[ref_book_id, supplier.id, method]
+                    for method in self.book_map[ref_book_id].available_printing_methods
+                    if (ref_book_id, supplier.id, method) in self.x
+                ]
+
+                if ref_book_to_supplier:
+                    # kit_supplier_var == 1 iff any method of ref_book is assigned to this supplier
+                    self.model.Add(
+                        sum(ref_book_to_supplier) == kit_supplier_vars[supplier.id]
+                    )
+
+            # All other books must be assigned to the same supplier as the reference book
             for book_id in kit.book_ids[1:]:
                 for supplier in self.data.suppliers:
-                    # Both variables must exist
-                    if (ref_book_id, supplier.id) in self.x and (book_id, supplier.id) in self.x:
-                        # If ref_book is assigned to supplier, this book must be too
+                    # If kit is assigned to this supplier, this book must also be assigned to this supplier
+                    book_to_supplier = [
+                        self.x[book_id, supplier.id, method]
+                        for method in self.book_map[book_id].available_printing_methods
+                        if (book_id, supplier.id, method) in self.x
+                    ]
+
+                    if book_to_supplier and supplier.id in kit_supplier_vars:
+                        # sum(book_to_supplier) == kit_supplier_var[supplier]
                         self.model.Add(
-                            self.x[ref_book_id, supplier.id] == self.x[book_id, supplier.id]
+                            sum(book_to_supplier) == kit_supplier_vars[supplier.id]
                         )
 
     def _add_brand_diversification_constraints(self) -> None:
-        """Maximum volumes per brand per supplier constraint"""
+        """Maximum volumes per brand per supplier constraint (regardless of method)"""
         max_volumes = self.data.config.max_volumes_per_brand_per_supplier
 
         for brand, book_ids in self.books_by_brand.items():
             for supplier in self.data.suppliers:
-                # Count how many books of this brand are assigned to this supplier
-                brand_books_to_supplier = [
-                    self.x[book_id, supplier.id]
-                    for book_id in book_ids
-                    if (book_id, supplier.id) in self.x
-                ]
+                # Count how many books of this brand are assigned to this supplier (any method)
+                brand_books_to_supplier = []
+
+                for book_id in book_ids:
+                    book = self.book_map[book_id]
+                    # For each book, create a binary indicator: is it assigned to this supplier?
+                    book_to_supplier_indicator = self.model.NewBoolVar(
+                        f"brand_{brand}_book_{book_id}_supplier_{supplier.id}"
+                    )
+
+                    # Get all methods for this book-supplier combination
+                    methods_for_book_supplier = [
+                        self.x[book_id, supplier.id, method]
+                        for method in book.available_printing_methods
+                        if (book_id, supplier.id, method) in self.x
+                    ]
+
+                    if methods_for_book_supplier:
+                        # Indicator is 1 if book is assigned to supplier with any method
+                        self.model.Add(
+                            sum(methods_for_book_supplier) == book_to_supplier_indicator
+                        )
+                        brand_books_to_supplier.append(book_to_supplier_indicator)
+                    else:
+                        # No valid assignments, indicator must be 0
+                        self.model.Add(book_to_supplier_indicator == 0)
 
                 if brand_books_to_supplier:
                     self.model.Add(sum(brand_books_to_supplier) <= max_volumes)
@@ -122,21 +172,22 @@ class SupplierAllocationSolver:
         """Supplier capacity constraints by printing method"""
         for supplier in self.data.suppliers:
             # Group by printing method
-            books_by_method: Dict[str, List[Tuple[str, int]]] = defaultdict(list)
+            books_by_method: Dict[str, List[Tuple[str, str, int]]] = defaultdict(list)
 
             for book in self.data.books:
-                if (book.id, supplier.id) in self.x:
-                    books_by_method[book.printing_method].append(
-                        (book.id, book.production_volume)
-                    )
+                for method in book.available_printing_methods:
+                    if (book.id, supplier.id, method) in self.x:
+                        books_by_method[method].append(
+                            (book.id, method, book.production_volume)
+                        )
 
             # Add capacity constraint for each printing method
             for method, capacity in supplier.capacities.items():
                 if method in books_by_method:
                     # Sum of (production_volume * assignment_var) <= capacity
                     total_volume_expr = sum(
-                        volume * self.x[book_id, supplier.id]
-                        for book_id, volume in books_by_method[method]
+                        volume * self.x[book_id, supplier.id, book_method]
+                        for book_id, book_method, volume in books_by_method[method]
                     )
                     self.model.Add(total_volume_expr <= capacity)
 
@@ -160,16 +211,19 @@ class SupplierAllocationSolver:
             if len(supplier_ids) < 2:
                 continue
 
-            # Check if these suppliers also have identical costs for all books
+            # Check if these suppliers also have identical costs for all (book, method) combinations
             identical_costs = True
             for book in self.data.books:
-                costs = []
-                for supplier_id in supplier_ids:
-                    if (book.id, supplier_id) in self.cost_matrix:
-                        costs.append(self.cost_matrix[book.id, supplier_id])
+                for method in book.available_printing_methods:
+                    costs = []
+                    for supplier_id in supplier_ids:
+                        if (book.id, supplier_id, method) in self.cost_matrix:
+                            costs.append(self.cost_matrix[book.id, supplier_id, method])
 
-                if len(set(costs)) > 1:  # Costs differ
-                    identical_costs = False
+                    if len(set(costs)) > 1:  # Costs differ
+                        identical_costs = False
+                        break
+                if not identical_costs:
                     break
 
             if identical_costs:
@@ -183,14 +237,15 @@ class SupplierAllocationSolver:
                     s2_volumes = []
 
                     for book in self.data.books:
-                        if (book.id, s1_id) in self.x:
-                            s1_volumes.append(
-                                book.production_volume * self.x[book.id, s1_id]
-                            )
-                        if (book.id, s2_id) in self.x:
-                            s2_volumes.append(
-                                book.production_volume * self.x[book.id, s2_id]
-                            )
+                        for method in book.available_printing_methods:
+                            if (book.id, s1_id, method) in self.x:
+                                s1_volumes.append(
+                                    book.production_volume * self.x[book.id, s1_id, method]
+                                )
+                            if (book.id, s2_id, method) in self.x:
+                                s2_volumes.append(
+                                    book.production_volume * self.x[book.id, s2_id, method]
+                                )
 
                     if s1_volumes and s2_volumes:
                         self.model.Add(sum(s1_volumes) >= sum(s2_volumes))
@@ -198,11 +253,12 @@ class SupplierAllocationSolver:
     def _add_objective(self) -> None:
         """Minimize total printing cost"""
         total_cost_expr = sum(
-            int(self.cost_matrix[book.id, supplier.id] * book.production_volume * 1000) *
-            self.x[book.id, supplier.id]
+            int(self.cost_matrix[book.id, supplier.id, method] * book.production_volume * 1000) *
+            self.x[book.id, supplier.id, method]
             for book in self.data.books
             for supplier in self.data.suppliers
-            if (book.id, supplier.id) in self.x
+            for method in book.available_printing_methods
+            if (book.id, supplier.id, method) in self.x
         )
 
         self.model.Minimize(total_cost_expr)
@@ -258,24 +314,26 @@ class SupplierAllocationSolver:
             )
 
     def _extract_assignments(self, solver: cp_model.CpSolver) -> List[Assignment]:
-        """Extract book-to-supplier assignments from solved model"""
+        """Extract book-to-supplier-method assignments from solved model"""
         assignments = []
 
         for book in self.data.books:
             for supplier in self.data.suppliers:
-                if (book.id, supplier.id) in self.x:
-                    if solver.Value(self.x[book.id, supplier.id]) == 1:
-                        unit_cost = self.cost_matrix[book.id, supplier.id]
-                        total_cost = unit_cost * book.production_volume
+                for method in book.available_printing_methods:
+                    if (book.id, supplier.id, method) in self.x:
+                        if solver.Value(self.x[book.id, supplier.id, method]) == 1:
+                            unit_cost = self.cost_matrix[book.id, supplier.id, method]
+                            total_cost = unit_cost * book.production_volume
 
-                        assignments.append(Assignment(
-                            book_id=book.id,
-                            supplier_id=supplier.id,
-                            production_volume=book.production_volume,
-                            unit_cost=unit_cost,
-                            total_cost=total_cost
-                        ))
-                        break  # Book assigned, move to next
+                            assignments.append(Assignment(
+                                book_id=book.id,
+                                supplier_id=supplier.id,
+                                printing_method=method,
+                                production_volume=book.production_volume,
+                                unit_cost=unit_cost,
+                                total_cost=total_cost
+                            ))
+                            break  # Book assigned, move to next book
 
         return assignments
 
@@ -294,8 +352,7 @@ class SupplierAllocationSolver:
         volume_used: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
         for assignment in assignments:
-            book = self.book_map[assignment.book_id]
-            method = book.printing_method
+            method = assignment.printing_method
             volume_used[assignment.supplier_id][method] += assignment.production_volume
 
         # Calculate utilization percentages

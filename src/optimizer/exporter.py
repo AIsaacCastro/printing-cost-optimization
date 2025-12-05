@@ -57,7 +57,7 @@ class ResultExporter:
                     'supplier_id': assignment.supplier_id,
                     'supplier_name': supplier.name,
                     'production_volume': assignment.production_volume,
-                    'printing_method': book.printing_method,
+                    'printing_method': assignment.printing_method,
                     'unit_cost': f"{assignment.unit_cost:.2f}",
                     'total_cost': f"{assignment.total_cost:.2f}"
                 })
