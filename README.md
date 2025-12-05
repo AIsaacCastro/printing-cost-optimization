@@ -19,12 +19,14 @@ Subject to these constraints:
 
 - ✅ **Printing method optimization**: Automatically selects the best printing method for each book
 - ✅ **Multi-method support**: Books can support multiple printing methods with different costs
-- ✅ CP-SAT solver using Google OR-Tools (free, high-performance)
-- ✅ JSON/CSV data configuration
-- ✅ Symmetry breaking for identical suppliers
-- ✅ Detailed result reporting and export with method information
-- ✅ CLI with rich output formatting
-- ✅ Data validation with Pydantic models
+- ✅ **CP-SAT solver** using Google OR-Tools (free, high-performance)
+- ✅ **Scalability**: Handles 5000+ books in 1-5 minutes
+- ✅ **Test data generator**: Create realistic large-scale datasets for performance testing
+- ✅ **JSON/CSV data configuration**: Easy to integrate with existing systems
+- ✅ **Symmetry breaking** for identical suppliers
+- ✅ **Detailed result reporting** and export with method information
+- ✅ **CLI** with rich output formatting
+- ✅ **Data validation** with Pydantic models
 
 ## Installation
 
@@ -285,15 +287,51 @@ Consider a book with 5,000 copies:
 
 The optimizer will choose **S001 with Offset method** ($12,500) as the optimal solution.
 
-## Performance
+## Performance Testing
+
+### Generate Large Test Data
+
+To test performance with larger datasets, use the included test data generator:
+
+```bash
+python generate_test_data.py
+```
+
+This generates realistic test data in `data/test_large/`:
+- **5,000 books** with varying production volumes (100-10,000 copies)
+- **20 suppliers** each with 3 printing methods (offset, digital, hybrid)
+- **200 kits** (bundles of 2-5 books)
+- **50 brands** distributed across books
+- **216,200 cost entries** (all book-supplier-method combinations)
+
+**Run optimization on large dataset:**
+```bash
+# Linux/Mac
+python -m src.optimizer.cli solve \
+    --books data/test_large/books.json \
+    --kits data/test_large/kits.json \
+    --suppliers data/test_large/suppliers.json \
+    --costs data/test_large/costs.csv \
+    --config data/test_large/config.json \
+    --output results/solution_large.json
+
+# Windows
+python -m src.optimizer.cli solve --books data/test_large/books.json --kits data/test_large/kits.json --suppliers data/test_large/suppliers.json --costs data/test_large/costs.csv --config data/test_large/config.json --output results/solution_large.json
+```
+
+Expected solve time: 1-5 minutes depending on hardware.
+
+**📖 For detailed information on data generation, customization options, and data characteristics, see [DATA_GENERATOR.md](DATA_GENERATOR.md)**
+
+### Performance Benchmarks
 
 Expected solution quality by problem scale:
 
-| Problem Scale | Method | Expected Quality |
-|---------------|--------|------------------|
-| <200 books | CP-SAT | Optimal |
-| 200-2000 books | CP-SAT | Optimal or gap <1% |
-| 2000-10000 books | CP-SAT + LNS | Gap 1-5% |
+| Problem Scale | Method | Expected Quality | Solve Time |
+|---------------|--------|------------------|------------|
+| <200 books | CP-SAT | Optimal | <1 second |
+| 200-2000 books | CP-SAT | Optimal or gap <1% | 1-30 seconds |
+| 2000-10000 books | CP-SAT + LNS | Gap 1-5% | 1-10 minutes |
 
 ## Development
 
@@ -305,14 +343,24 @@ pytest tests/
 ### Project Structure
 ```
 printing-cost-optimization/
-├── data/               # Input data files
-├── results/            # Output results
+├── data/                      # Input data files
+│   ├── example_*.json/csv    # Small example dataset (15 books)
+│   └── test_large/           # Large test dataset (5000 books, generated)
+├── results/                   # Output results
 ├── src/
-│   └── optimizer/      # Main optimization package
-├── tests/              # Unit tests
-├── requirements.txt    # Python dependencies
-├── CLAUDE.md          # AI assistant guidance
-└── README.md          # This file
+│   └── optimizer/            # Main optimization package
+│       ├── models.py         # Data models
+│       ├── data_loader.py    # Data loading & validation
+│       ├── solver.py         # CP-SAT optimization
+│       ├── exporter.py       # Result export
+│       └── cli.py            # Command-line interface
+├── tests/                    # Unit tests
+├── generate_test_data.py     # Large dataset generator
+├── export_results.py         # CSV export utility
+├── requirements.txt          # Python dependencies
+├── CLAUDE.md                 # AI assistant guidance
+├── DATA_GENERATOR.md         # Test data generator docs
+└── README.md                 # This file
 ```
 
 ## License
